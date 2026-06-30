@@ -3,11 +3,9 @@ package com.example.qacraft_test_management.service;
 import com.example.qacraft_test_management.dto.BugRequest;
 import com.example.qacraft_test_management.dto.BugResponse;
 import com.example.qacraft_test_management.entity.Bug;
-import com.example.qacraft_test_management.entity.TestCase;
 import com.example.qacraft_test_management.entity.TestExecution;
-import com.example.qacraft_test_management.enums.BugStatus;
+import com.example.qacraft_test_management.mapper.BugMapper;
 import com.example.qacraft_test_management.repo.BugRepo;
-import com.example.qacraft_test_management.repo.TestCaseRepo;
 import com.example.qacraft_test_management.repo.TestExecutionRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,25 +16,25 @@ import java.util.List;
 @RequiredArgsConstructor
 public class BugServiceImpl implements BugService{
     private final BugRepo bugRepository;
-    private final TestCaseRepo testCaseRepository;
     private final TestExecutionRepo testExecutionRepository;
+    private final BugMapper bugMapper;
 
     @Override
     public BugResponse createBug(BugRequest request) {
-        Bug bug = new Bug();
-
-        setBugFields(bug, request);
-
+        Bug bug = bugMapper.toEntity(request);
+        TestExecution execution = testExecutionRepository.findById(request.getTestExecutionId())
+                .orElseThrow(() -> new RuntimeException("Test execution not found with id: " + request.getTestExecutionId()));
+        bug.setTestExecution(execution);
         Bug savedBug = bugRepository.save(bug);
 
-        return mapToResponse(savedBug);
+        return bugMapper.toResponse(savedBug);
     }
 
     @Override
     public List<BugResponse> getAllBugs() {
         return bugRepository.findAll()
                 .stream()
-                .map(this::mapToResponse)
+                .map(bugMapper::toResponse)
                 .toList();
     }
 
@@ -45,7 +43,7 @@ public class BugServiceImpl implements BugService{
         Bug bug = bugRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Bug not found with id: " + id));
 
-        return mapToResponse(bug);
+        return bugMapper.toResponse(bug);
     }
 
     @Override
@@ -53,11 +51,15 @@ public class BugServiceImpl implements BugService{
         Bug bug = bugRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Bug not found with id: " + id));
 
-        setBugFields(bug, request);
+       bugMapper.updateEntity(bug,request);
+       TestExecution execution = testExecutionRepository.findById(request.getTestExecutionId())
+                .orElseThrow(() -> new RuntimeException("Test execution not found with id: " + request.getTestExecutionId()));
 
-        Bug updatedBug = bugRepository.save(bug);
+       bug.setTestExecution(execution);
 
-        return mapToResponse(updatedBug);
+       Bug updatedBug = bugRepository.save(bug);
+
+        return bugMapper.toResponse(updatedBug);
     }
 
     @Override
@@ -66,66 +68,6 @@ public class BugServiceImpl implements BugService{
                 .orElseThrow(() -> new RuntimeException("Bug not found with id: " + id));
 
         bugRepository.delete(bug);
-    }
-
-    private void setBugFields(Bug bug, BugRequest request) {
-        bug.setTitle(request.getTitle());
-        bug.setDescription(request.getDescription());
-        bug.setSeverity(request.getSeverity());
-        bug.setPriority(request.getPriority());
-
-        if (request.getStatus() != null) {
-            bug.setStatus(request.getStatus());
-        } else if (bug.getStatus() == null) {
-            bug.setStatus(BugStatus.OPEN);
-        }
-
-        bug.setReporter(request.getReporter());
-        bug.setAssignee(request.getAssignee());
-        bug.setEnvironment(request.getEnvironment());
-        bug.setBrowser(request.getBrowser());
-        bug.setOperatingSystem(request.getOperatingSystem());
-        bug.setStepsToReproduce(request.getStepsToReproduce());
-        bug.setExpectedResult(request.getExpectedResult());
-        bug.setActualResult(request.getActualResult());
-
-        if (request.getTestExecutionId() != null) {
-            TestExecution execution = testExecutionRepository.findById(request.getTestExecutionId())
-                    .orElseThrow(() -> new RuntimeException("Test execution not found with id: " + request.getTestExecutionId()));
-
-            bug.setTestExecution(execution);
-        }
-    }
-
-    private BugResponse mapToResponse(Bug bug) {
-        BugResponse response = new BugResponse();
-
-        response.setId(bug.getId());
-        response.setTitle(bug.getTitle());
-        response.setDescription(bug.getDescription());
-        response.setSeverity(bug.getSeverity());
-        response.setPriority(bug.getPriority());
-        response.setStatus(bug.getStatus());
-
-        response.setReporter(bug.getReporter());
-        response.setAssignee(bug.getAssignee());
-        response.setEnvironment(bug.getEnvironment());
-        response.setBrowser(bug.getBrowser());
-        response.setOperatingSystem(bug.getOperatingSystem());
-
-        response.setStepsToReproduce(bug.getStepsToReproduce());
-        response.setExpectedResult(bug.getExpectedResult());
-        response.setActualResult(bug.getActualResult());
-
-        if (bug.getTestExecution().getTestCase() != null) {
-            response.setTestCaseId(bug.getTestExecution().getTestCase().getId());
-            response.setTestCaseTitle(bug.getTestExecution().getTestCase().getTitle());
-        }
-
-        response.setCreatedAt(bug.getCreatedAt());
-        response.setUpdatedAt(bug.getUpdatedAt());
-
-        return response;
     }
 
 }

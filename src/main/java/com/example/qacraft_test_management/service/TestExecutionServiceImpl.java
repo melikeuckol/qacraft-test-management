@@ -4,6 +4,7 @@ import com.example.qacraft_test_management.dto.TestExecutionRequest;
 import com.example.qacraft_test_management.dto.TestExecutionResponse;
 import com.example.qacraft_test_management.entity.TestCase;
 import com.example.qacraft_test_management.entity.TestExecution;
+import com.example.qacraft_test_management.mapper.TestExecutionMapper;
 import com.example.qacraft_test_management.repo.TestCaseRepo;
 import com.example.qacraft_test_management.repo.TestExecutionRepo;
 import lombok.RequiredArgsConstructor;
@@ -14,26 +15,30 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class TestExecutionImpl implements TestExecutionService{
+public class TestExecutionServiceImpl implements TestExecutionService{
     private final TestExecutionRepo testExecutionRepository;
     private final TestCaseRepo testCaseRepository;
+    private final TestExecutionMapper testExecutionMapper;
 
     @Override
     public TestExecutionResponse createExecution(TestExecutionRequest request) {
-        TestExecution execution = new TestExecution();
 
-        setExecutionFields(execution, request);
+        TestExecution execution = testExecutionMapper.toEntity(request);
+        TestCase testCase = testCaseRepository.findById(request.getTestCaseId())
+                .orElseThrow(() -> new RuntimeException("Test case not found with id: " + request.getTestCaseId()));
+
+        execution.setTestCase(testCase);
 
         TestExecution savedExecution = testExecutionRepository.save(execution);
 
-        return mapToResponse(savedExecution);
+        return testExecutionMapper.toResponse(savedExecution);
     }
 
     @Override
     public List<TestExecutionResponse> getAllExecutions() {
         return testExecutionRepository.findAll()
                 .stream()
-                .map(this::mapToResponse)
+                .map(testExecutionMapper::toResponse)
                 .toList();
     }
 
@@ -42,7 +47,7 @@ public class TestExecutionImpl implements TestExecutionService{
         TestExecution execution = testExecutionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Test execution not found with id: " + id));
 
-        return mapToResponse(execution);
+        return testExecutionMapper.toResponse(execution);
     }
 
     @Override
@@ -50,11 +55,15 @@ public class TestExecutionImpl implements TestExecutionService{
         TestExecution execution = testExecutionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Test execution not found with id: " + id));
 
-        setExecutionFields(execution, request);
+
+        testExecutionMapper.updateEntity(execution,request);
+        TestCase testCase = testCaseRepository.findById(request.getTestCaseId())
+                .orElseThrow(() -> new RuntimeException("Test case not found with id: " + request.getTestCaseId()));
+
+        execution.setTestCase(testCase);
 
         TestExecution updatedExecution = testExecutionRepository.save(execution);
-
-        return mapToResponse(updatedExecution);
+        return testExecutionMapper.toResponse(updatedExecution);
     }
 
     @Override
@@ -65,44 +74,14 @@ public class TestExecutionImpl implements TestExecutionService{
         testExecutionRepository.delete(execution);
     }
 
-    private void setExecutionFields(TestExecution execution, TestExecutionRequest request) {
-        TestCase testCase = testCaseRepository.findById(request.getTestCaseId())
-                .orElseThrow(() -> new RuntimeException("Test case not found with id: " + request.getTestCaseId()));
-
-        execution.setTestCase(testCase);
-        execution.setExecutor(request.getExecutor());
-        execution.setStatus(request.getStatus());
-        execution.setExecutionTimeInSeconds(request.getExecutionTimeInSeconds());
-        execution.setNotes(request.getNotes());
-    }
 
     @Override
     public List<TestExecutionResponse> getExecutionsByTestCaseId(Long testCaseId) {
 
         return testExecutionRepository.findByTestCaseId(testCaseId)
                 .stream()
-                .map(this::mapToResponse)
+                .map(testExecutionMapper::toResponse)
                 .collect(Collectors.toList());
     }
 
-    private TestExecutionResponse mapToResponse(TestExecution execution) {
-        TestExecutionResponse response = new TestExecutionResponse();
-
-        response.setId(execution.getId());
-
-        if (execution.getTestCase() != null) {
-            response.setTestCaseId(execution.getTestCase().getId());
-            response.setTestCaseTitle(execution.getTestCase().getTitle());
-        }
-
-        response.setExecutor(execution.getExecutor());
-        response.setExecutionDate(execution.getExecutionDate());
-        response.setStatus(execution.getStatus());
-        response.setExecutionTimeInSeconds(execution.getExecutionTimeInSeconds());
-        response.setNotes(execution.getNotes());
-        response.setCreatedAt(execution.getCreatedAt());
-        response.setUpdatedAt(execution.getUpdatedAt());
-
-        return response;
-    }
 }
