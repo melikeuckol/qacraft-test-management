@@ -2,7 +2,9 @@ package com.example.qacraft_test_management.controller;
 
 import com.example.qacraft_test_management.dto.TestCaseRequest;
 import com.example.qacraft_test_management.dto.TestCaseResponse;
+import com.example.qacraft_test_management.dto.TestExecutionResponse;
 import com.example.qacraft_test_management.service.TestCaseService;
+import com.example.qacraft_test_management.service.TestExecutionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -14,6 +16,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TestCaseController {
     private final TestCaseService testCaseService;
+    private final TestExecutionService testExecutionService;
 
     @PostMapping
     public TestCaseResponse createTestCase(@Valid @RequestBody TestCaseRequest request) {
@@ -42,6 +45,11 @@ public class TestCaseController {
     @DeleteMapping("/{id}")
     public void deleteTestCase(@PathVariable Long id) {
         testCaseService.deleteTestCase(id);
+    }
+
+    @GetMapping("/{id}/executions")
+    public List<TestExecutionResponse> getExecutionsByTestCaseId(@PathVariable Long id) {
+        return testExecutionService.getExecutionsByTestCaseId(id);
     }
 
 }

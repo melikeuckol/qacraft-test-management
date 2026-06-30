@@ -4,9 +4,11 @@ import com.example.qacraft_test_management.dto.BugRequest;
 import com.example.qacraft_test_management.dto.BugResponse;
 import com.example.qacraft_test_management.entity.Bug;
 import com.example.qacraft_test_management.entity.TestCase;
+import com.example.qacraft_test_management.entity.TestExecution;
 import com.example.qacraft_test_management.enums.BugStatus;
 import com.example.qacraft_test_management.repo.BugRepo;
 import com.example.qacraft_test_management.repo.TestCaseRepo;
+import com.example.qacraft_test_management.repo.TestExecutionRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +19,7 @@ import java.util.List;
 public class BugServiceImpl implements BugService{
     private final BugRepo bugRepository;
     private final TestCaseRepo testCaseRepository;
+    private final TestExecutionRepo testExecutionRepository;
 
     @Override
     public BugResponse createBug(BugRequest request) {
@@ -86,11 +89,11 @@ public class BugServiceImpl implements BugService{
         bug.setExpectedResult(request.getExpectedResult());
         bug.setActualResult(request.getActualResult());
 
-        if (request.getTestCaseId() != null) {
-            TestCase testCase = testCaseRepository.findById(request.getTestCaseId())
-                    .orElseThrow(() -> new RuntimeException("Test case not found with id: " + request.getTestCaseId()));
+        if (request.getTestExecutionId() != null) {
+            TestExecution execution = testExecutionRepository.findById(request.getTestExecutionId())
+                    .orElseThrow(() -> new RuntimeException("Test execution not found with id: " + request.getTestExecutionId()));
 
-            bug.setTestCase(testCase);
+            bug.setTestExecution(execution);
         }
     }
 
@@ -114,9 +117,9 @@ public class BugServiceImpl implements BugService{
         response.setExpectedResult(bug.getExpectedResult());
         response.setActualResult(bug.getActualResult());
 
-        if (bug.getTestCase() != null) {
-            response.setTestCaseId(bug.getTestCase().getId());
-            response.setTestCaseTitle(bug.getTestCase().getTitle());
+        if (bug.getTestExecution().getTestCase() != null) {
+            response.setTestCaseId(bug.getTestExecution().getTestCase().getId());
+            response.setTestCaseTitle(bug.getTestExecution().getTestCase().getTitle());
         }
 
         response.setCreatedAt(bug.getCreatedAt());

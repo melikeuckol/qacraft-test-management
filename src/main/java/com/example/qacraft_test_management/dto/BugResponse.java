@@ -2,6 +2,7 @@ package com.example.qacraft_test_management.dto;
 
 import com.example.qacraft_test_management.enums.BugSeverity;
 import com.example.qacraft_test_management.enums.BugStatus;
+import com.example.qacraft_test_management.enums.ExecutionStatus;
 import com.example.qacraft_test_management.enums.Priority;
 import lombok.Getter;
 import lombok.Setter;
@@ -28,8 +29,10 @@ public class BugResponse {
     private String expectedResult;
     private String actualResult;
 
+    private Long testExecutionId;
     private Long testCaseId;
     private String testCaseTitle;
+    private ExecutionStatus executionStatus;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

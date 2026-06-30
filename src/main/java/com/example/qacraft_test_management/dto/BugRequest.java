@@ -45,5 +45,6 @@ public class BugRequest {
     @Size(max = 1000)
     private String actualResult;
 
-    private Long testCaseId;
+    @NotNull(message = "Test execution id is required")
+    private Long testExecutionId;
 }

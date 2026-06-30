@@ -50,8 +50,8 @@ public class Bug {
     private String actualResult;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "test_case_id")
-    private TestCase testCase;
+    @JoinColumn(name = "test_execution_id", nullable = false)
+    private TestExecution testExecution;
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
